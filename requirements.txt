@@ -6,4 +6,7 @@ drf-yasg
 Pillow
 psycopg2-binary
 python-decouple
+gunicorn
+whitenoise
+
 
