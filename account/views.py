@@ -8,6 +8,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from . import serializers
 from .send_email import send_confirmation_email, send_code_password_reset
 from django.contrib.auth import get_user_model
+from shopApi.tasks import send_email_task
+from .serializers import SpamViewSerializer
 
 User = get_user_model()
 
@@ -20,7 +22,8 @@ class RegistrationView(APIView):
         if serializer.is_valid(raise_exception=True):
             user = serializer.save()
             if user:
-                send_confirmation_email(user.email, user.activation_code)
+                # send_confirmation_email(user.email, user.activation_code)
+                send_email_task.delay(user.email, user.activation_code)
             return Response(serializer.data, status=201)
         return Response('Bad request!', status=400)
 
@@ -78,6 +81,16 @@ class RestorePasswordView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response('Password changed successfully!')
+
+
+class FollowSpamApi(APIView):
+    def post(self, request):
+        serializer = serializers.SpamViewSerializer(
+            data=request.data, context={'request': request}
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save(email=request.user.email)
+        return Response('Followed to spam!', 201)
 
 
 # def send_mail(request):
